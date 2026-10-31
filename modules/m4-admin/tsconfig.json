@@ -1,0 +1,1 @@
+{ "extends": "../../tsconfig.module.json", "include": ["module.manifest.ts", "src/**/*", "web/**/*"] }

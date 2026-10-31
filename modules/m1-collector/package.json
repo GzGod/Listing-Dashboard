@@ -1,0 +1,7 @@
+{
+  "name": "@modules/m1-collector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@app/core": "workspace:*", "@app/shared": "workspace:*" }
+}

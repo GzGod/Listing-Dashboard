@@ -1,0 +1,2 @@
+{ "$comment": "extends the base tsconfig.module.json (local mirror at the same path). Runtime code only; tests are in tsconfig.test.json", "extends": "../../tsconfig.module.json",
+  "include": ["config.ts", "module.manifest.ts", "lib", "schema", "server", "test-utils"], "exclude": ["server/__tests__"] }

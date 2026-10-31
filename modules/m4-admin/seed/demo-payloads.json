@@ -1,0 +1,12 @@
+{
+  "AD-01 POST /api/m4-admin/projects": { "name": "Demo Token", "symbol": "DEMO", "trackId": 1, "longgeRating": "A", "longgeRatedAt": "2026-10-30" },
+  "AD-01 POST /api/m4-admin/listings": { "projectId": 1, "exchangeId": 1, "day": "2026-10-31", "stage": "spot", "pair": "DEMO/USDT" },
+  "AD-02 POST /api/m4-admin/people": { "displayName": "Demo KOL", "handle": "demo_kol", "platformId": 1, "kolTierId": 1 },
+  "AD-02 POST /api/m4-admin/person-tags": { "personId": 1, "tag": "top_kol" },
+  "AD-03 POST /api/m4-admin/score-params": { "a": 1, "b": 3, "effectiveFrom": "2026-11-01", "backfill": false },
+  "AD-03 回算历史": { "a": 1, "b": 3, "effectiveFrom": "2026-11-01", "backfill": true, "backfillFrom": "2026-10-01" },
+  "AD-04 POST /api/m4-admin/adjustments": { "projectId": 1, "day": "2026-10-30", "adjustedScore": 88, "reason": "刷量剔除" },
+  "AD-05 POST /api/m4-admin/aliases": { "projectId": 1, "alias": "demo", "kind": "name" },
+  "AD-06 POST /api/m4-admin/review/9001": { "projectId": 1 },
+  "AD-07 POST /api/m4-admin/tracks": { "name": "AI Agent", "parentId": 1 }
+}

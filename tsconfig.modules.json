@@ -1,0 +1,6 @@
+{
+  "//": "pnpm typecheck 用：modules/* 的后端/共享代码（manifest、src/、server/ 等，除 web/）。前端 web/ 由 tsconfig.modules.web.json 检查",
+  "extends": "./tsconfig.module.json",
+  "include": ["modules/*/module.manifest.ts", "modules/*/**/*.ts", "modules/*/**/*.tsx"],
+  "exclude": ["modules/*/node_modules", "modules/*/.next", "modules/*/dist", "modules/*/web/**"]
+}

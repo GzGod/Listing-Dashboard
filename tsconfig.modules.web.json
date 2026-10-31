@@ -1,0 +1,6 @@
+{
+  "//": "pnpm typecheck 用：modules/*/web/** 前端代码，Next.js 口径",
+  "extends": "./tsconfig.module.web.json",
+  "include": ["apps/web/next-env.d.ts", "modules/*/web/**/*.ts", "modules/*/web/**/*.tsx"],
+  "exclude": ["modules/*/node_modules"]
+}

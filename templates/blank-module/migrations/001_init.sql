@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS m___TABLE___items (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

@@ -1,0 +1,37 @@
+{
+  "name": "@modules/m6-project",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./schema": "./schema/index.ts",
+    "./config": "./config.ts",
+    "./server": "./server/index.ts",
+    "./web": "./web/index.ts",
+    "./test-utils": "./test-utils/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && tsc -p tsconfig.web.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@app/core": "workspace:*",
+    "@app/shared": "workspace:*",
+    "@app/ui": "workspace:*",
+    "echarts": "^5.5.1",
+    "fastify": "^5.0.0",
+    "zod": "^3.23.8"
+  },
+  "peerDependencies": {
+    "next": ">=15.5",
+    "react": ">=19"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.0.0",
+    "next": "15.5.6",
+    "pg": "^8.23.1",
+    "react": "19.2.0",
+    "vitest": "^2.1.8"
+  }
+}

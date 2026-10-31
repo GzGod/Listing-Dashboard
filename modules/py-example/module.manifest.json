@@ -1,0 +1,20 @@
+{
+  "apiVersion": 1,
+  "name": "py-example",
+  "version": "1.0.0",
+  "displayName": "Python 外部服务示例",
+  "kind": "external",
+  "requires": { "core": "^1.1.0" },
+  "external": { "baseUrl": "${PY_EXAMPLE_URL:-http://localhost:8001}", "health": "/health", "transport": "http", "timeoutMs": 5000 },
+  "tables": { "owns": ["m_py_example_items"] },
+  "apis": [
+    { "method": "GET", "path": "/items", "description": "列出条目" },
+    { "method": "POST", "path": "/items", "description": "新增条目" },
+    { "method": "POST", "path": "/emit", "description": "通过底座发 recalc.requested" }
+  ],
+  "subscribes": ["recalc.requested"],
+  "emits": ["recalc.requested"],
+  "adminMenu": [{ "path": "/", "title": "Python 示例", "url": "/ui", "permission": "admin:access" }],
+  "config": [{ "key": "py-example.tickCron", "default": "30 0 * * *", "description": "tick 任务 cron" }],
+  "jobs": [{ "name": "tick", "cronKey": "py-example.tickCron" }]
+}

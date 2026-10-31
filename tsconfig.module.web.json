@@ -1,0 +1,16 @@
+{
+  "//": "模块前端代码（modules/*/web/**）的 TS 基线：和 Next.js 壳一致（bundler 解析、jsx preserve、DOM、next 类型），react / next/* / @app/ui 从底座 apps/web 解析",
+  "compilerOptions": {
+    "target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler", "jsx": "preserve", "strict": true, "esModuleInterop": true,
+    "skipLibCheck": true, "resolveJsonModule": true, "noEmit": true, "isolatedModules": true, "allowJs": false,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"], "types": ["react", "react-dom", "node"],
+    "baseUrl": ".",
+    "typeRoots": ["./apps/web/node_modules/@types", "./node_modules/@types"],
+    "paths": {
+      "@app/ui": ["packages/ui/src/index.tsx"], "@app/shared": ["packages/shared/src/index.ts"],
+      "next": ["apps/web/node_modules/next"], "next/*": ["apps/web/node_modules/next/*"],
+      "react": ["apps/web/node_modules/@types/react"], "react/*": ["apps/web/node_modules/@types/react/*"],
+      "react-dom": ["apps/web/node_modules/@types/react-dom"], "react-dom/*": ["apps/web/node_modules/@types/react-dom/*"]
+    }
+  }
+}

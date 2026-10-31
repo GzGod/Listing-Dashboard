@@ -1,0 +1,310 @@
+// 底座核心表 = PRD v0.3 第 10 节全部表。归底座所有，模块不得改结构（改表先提 PR 评审）。
+// 模块自己的表不写在这里：放 modules/<name>/migrations/*.sql，表名前缀 m_<name>_。
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- 配置 ----------
+model Exchange {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique
+  type     String  // CEX | DEX
+  enabled  Boolean @default(true)
+  listings ListingEvent[]
+  volumes  VolumeSnapshot[]
+  @@map("exchanges")
+}
+model Platform {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  enabled Boolean  @default(true)
+  people  Person[]
+  posts   Post[]
+  @@map("platforms")
+}
+/// KOL 等级权重，带版本（和 score_params 一样）：改权重 = 新增一个版本的整套等级行，不覆盖旧版本。
+/// 某天用哪版 = effective_from <= 该日的最新 version。people.kol_tier 存等级名，按版本查权重。
+model KolTier {
+  id            Int      @id @default(autoincrement())
+  version       String
+  effectiveFrom DateTime @map("effective_from") @db.Date
+  name          String   // 等级名，如 S / A / B
+  weight        Float    // 权重 w
+  createdBy     Int?     @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  @@unique([version, name])
+  @@index([effectiveFrom])
+  @@map("kol_tiers")
+}
+model ScoreParams {
+  id              Int      @id @default(autoincrement())
+  version         String   @unique // 参数版本，如 "v1"；改权重 = 新增一行新版本，不覆盖旧版本
+  effectiveFrom   DateTime @map("effective_from") @db.Date // 从哪天（UTC）起生效；某天用哪版 = effective_from <= 该日的最新一版
+  createdBy       Int?     @map("created_by")
+  a               Float    // 浏览量系数
+  b               Float    // 收藏量系数
+  updateFrequency String   @default("daily") @map("update_frequency")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  @@map("score_params")
+}
+model Track {
+  id       Int     @id @default(autoincrement())
+  name     String
+  parentId Int?    @map("parent_id")
+  parent   Track?  @relation("TrackTree", fields: [parentId], references: [id])
+  children Track[] @relation("TrackTree")
+  projects Project[]
+  buzz     BuzzSnapshot[]
+  daily    ProjectDaily[] @relation("ProjectDailyTrack")
+  @@unique([parentId, name])
+  @@map("tracks")
+}
+
+// ---------- 业务 ----------
+model Project {
+  id            Int       @id @default(autoincrement())
+  name          String
+  symbol        String
+  trackId       Int?      @map("track_id") // 当前赛道（m4-admin 写）
+  track         Track?    @relation(fields: [trackId], references: [id], onDelete: Restrict)
+  // ---- PD-01 / PD-02（m4-admin 写，M5M6 读）----
+  fundamentals  Json?     // 结构见 @app/shared FundamentalsSchema（含 capTable）
+  team          Json?     // 结构见 @app/shared TeamSchema
+  logoUrl       String?   @map("logo_url")
+  websiteUrl    String?   @map("website_url")
+  xHandle       String?   @map("x_handle")
+  docsUrl       String?   @map("docs_url")
+  usersCount    Int?      @map("users_count")
+  usersAsOf     DateTime? @map("users_as_of") @db.Date
+  usersSource   String?   @map("users_source")
+  revenueUsd    Decimal?  @map("revenue_usd") @db.Decimal(20, 2)
+  revenuePeriod String?   @map("revenue_period") // "30d" | "quarter" | "year"
+  revenueAsOf   DateTime? @map("revenue_as_of") @db.Date
+  revenueSource String?   @map("revenue_source")
+  coingeckoId   String?   @unique @map("coingecko_id") // CoinGecko 币种 id（m4-admin 写，M1 拉价格用）
+  longgeRating  String?   @map("longge_rating")
+  longgeRatedAt DateTime? @map("longge_rated_at") @db.Date
+  createdAt     DateTime  @default(now()) @map("created_at")
+  contracts     ProjectContract[]
+  aliases       ProjectAlias[]
+  listings      ListingEvent[]
+  mentions      PostMention[]
+  buzz          BuzzSnapshot[]
+  volumes       VolumeSnapshot[]
+  daily         ProjectDaily[]
+  adjustments   BuzzAdjustment[]
+  prices        PriceSnapshot[]
+  @@index([symbol])
+  @@map("projects")
+}
+model ProjectContract {
+  id        Int     @id @default(autoincrement())
+  projectId Int     @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  chain     String
+  address   String
+  @@unique([chain, address])
+  @@map("project_contracts")
+}
+model ProjectAlias {
+  id        Int     @id @default(autoincrement())
+  projectId Int     @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  alias     String
+  kind      String  // ticker | name | contract
+  @@unique([projectId, alias])
+  @@index([alias])
+  @@map("project_aliases")
+}
+model ListingEvent {
+  id              Int      @id @default(autoincrement())
+  projectId       Int      @map("project_id")
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  exchangeId      Int      @map("exchange_id")
+  exchange        Exchange @relation(fields: [exchangeId], references: [id])
+  day             DateTime @db.Date // UTC 切日
+  stage           String   // preannounce | spot | perp
+  pair            String?
+  announcementUrl String?  @map("announcement_url")
+  @@index([day])
+  @@map("listing_events")
+}
+model Person {
+  id           Int       @id @default(autoincrement())
+  displayName  String    @map("display_name")
+  handle       String
+  platformId   Int       @map("platform_id")
+  platform     Platform  @relation(fields: [platformId], references: [id])
+  kolTier      String?   @map("kol_tier") // 等级名（对应 kol_tiers.name，权重按日期取版本）
+  enabled      Boolean   @default(true)
+  joinedPoolAt DateTime  @default(now()) @map("joined_pool_at") @db.Date
+  tags         PersonTag[]
+  posts        Post[]
+  @@unique([platformId, handle])
+  @@map("people")
+}
+model PersonTag {
+  id       Int    @id @default(autoincrement())
+  personId Int    @map("person_id")
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  tag      String // exchange_core | top_vc | whale | top_kol
+  @@unique([personId, tag])
+  @@map("person_tags")
+}
+model Post {
+  id             Int       @id @default(autoincrement())
+  personId       Int       @map("person_id")
+  person         Person    @relation(fields: [personId], references: [id])
+  platformId     Int       @map("platform_id")
+  platform       Platform  @relation(fields: [platformId], references: [id])
+  platformPostId String    @map("platform_post_id")
+  postedAt       DateTime  @map("posted_at")
+  views          Int       @default(0)
+  bookmarks      Int       @default(0)
+  url            String
+  text           String?
+  lastFetchedAt  DateTime? @map("last_fetched_at")
+  frozen         Boolean   @default(false) // 发帖 7 天后固定
+  mentions       PostMention[]
+  @@unique([platformId, platformPostId])
+  @@index([postedAt])
+  @@map("posts")
+}
+model PostMention {
+  id          Int     @id @default(autoincrement())
+  postId      Int     @map("post_id")
+  post        Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  projectId   Int     @map("project_id")
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  matchMethod String  @map("match_method") // ticker | name | contract
+  status      String  @default("pending") // pending | confirmed | rejected；只有 confirmed 计入声量。每个候选项目一行
+  reviewedBy  Int?    @map("reviewed_by")
+  reviewedAt  DateTime? @map("reviewed_at")
+  @@unique([postId, projectId])
+  @@index([status])
+  @@map("post_mentions")
+}
+
+// ---------- 每日快照（UTC 0 点切日） ----------
+model BuzzSnapshot {
+  id                Int      @id @default(autoincrement())
+  projectId         Int      @map("project_id")
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  day               DateTime @db.Date
+  trackId           Int?     @map("track_id") // 当日所属赛道（规则同 project_daily.track_id）
+  track             Track?   @relation(fields: [trackId], references: [id], onDelete: Restrict)
+  kolPostCount      Int?     @map("kol_post_count")       // 子项：原始值，不可人工改；无原始数据时 null
+  coreExposureCount Int?     @map("core_exposure_count")  // 子项：原始值，不可人工改；无原始数据时 null
+  heatScore         Float?   @map("heat_score")           // 子项：原始值，不可人工改；无原始数据时 null
+  paramsVersion     String?  @map("params_version")     // 计算时用的 score_params.version（m3-engine 写）
+  tiersVersion      String?  @map("tiers_version")      // 计算时用的 kol_tiers.version（m3-engine 写）
+  rawTotal          Float?   @map("raw_total")      // 原始总分（m3-engine 写）；当天只有人工调整、没有原始数据时为 null
+  trackRank         Int?     @map("track_rank")         // 当日同赛道内按 adjusted_total 的排名（m3-engine 写；并列同名次，下一名跳号 1,1,3）
+  adjustedTotal     Float    @map("adjusted_total") // 必填； = 最新一条未撤销的 buzz_adjustments.value ?? rawTotal（m3-engine 写），前台展示/排名用它
+  adjustments       BuzzAdjustment[]
+  @@unique([projectId, day])
+  @@index([day, trackId])
+  @@map("buzz_snapshots")
+}
+/// 人工调分记录（m4-admin 写；待 PRD 更新）。不改 buzz_snapshots；m3-engine 重算时取该项目该日未撤销的那条作为 adjusted_total。
+/// 每个 (project_id, day) 最多一条未撤销记录（迁移里的部分唯一索引 buzz_adjustments_active_uq）。
+model BuzzAdjustment {
+  id             Int           @id @default(autoincrement())
+  projectId      Int           @map("project_id")
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  day            DateTime      @db.Date
+  buzzSnapshotId Int?          @map("buzz_snapshot_id") // 可选：调整时对应的快照
+  buzzSnapshot   BuzzSnapshot? @relation(fields: [buzzSnapshotId], references: [id], onDelete: Restrict)
+  value          Float         // 调整后的总分
+  reason         String?
+  createdBy      Int?          @map("created_by")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  revoked        Boolean       @default(false) // 撤销后不再生效（保留留痕）
+  @@index([projectId, day])
+  @@map("buzz_adjustments")
+}
+/// 币价日快照（m1-collector 写；待 PRD 更新）。缺数据的日子没有行
+model PriceSnapshot {
+  id        Int      @id @default(autoincrement())
+  projectId Int      @map("project_id")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  day       DateTime @db.Date
+  priceUsd  Float?   @map("price_usd") // 拉到行但没价格时为 null（null ≠ 0）
+  source    String   @default("coingecko")
+  fetchedAt DateTime @default(now()) @map("fetched_at")
+  @@unique([projectId, day])
+  @@map("price_snapshots")
+}
+model VolumeSnapshot {
+  id               Int      @id @default(autoincrement())
+  projectId        Int      @map("project_id")
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  exchangeId       Int      @map("exchange_id")
+  exchange         Exchange @relation(fields: [exchangeId], references: [id])
+  day              DateTime @db.Date
+  spotVolumeUsd24h Float?   @map("spot_volume_usd_24h") // null = 当天有行但没取到（null ≠ 0）
+  @@unique([projectId, exchangeId, day])
+  @@map("volume_snapshots")
+}
+model ProjectDaily {
+  id                 Int      @id @default(autoincrement())
+  projectId          Int      @map("project_id")
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  day                DateTime @db.Date
+  trackId            Int?     @map("track_id") // 当日所属赛道（m3-engine 写）；项目还没赛道时为 null（此时 volume_track_rank 也为 null，不参与排名）；回补时沿用该日已有快照的 track_id，没有则用 projects.track_id
+  track              Track?   @relation("ProjectDailyTrack", fields: [trackId], references: [id], onDelete: Restrict)
+  totalSpotVolumeUsd Float?   @map("total_spot_volume_usd")
+  volumeTrackRank    Int?     @map("volume_track_rank") // 当日同赛道内按现货成交额的排名（m3-engine 写；并列同名次，下一名跳号）
+  priceUsd           Float?   @map("price_usd")
+  @@unique([projectId, day])
+  @@index([day, trackId])
+  @@map("project_daily")
+}
+
+// ---------- 审计 / 账号 ----------
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  actorId   Int?     @map("actor_id")
+  module    String
+  action    String
+  table     String?  @map("table_name")
+  recordId  String?  @map("record_id")
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  @@index([table, recordId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String
+  passwordHash String   @map("password_hash")
+  role         String   @default("viewer") // admin | editor | viewer
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  @@map("users")
+}
+
+// 底座内部：模块迁移记录（模块安装/卸载用）
+/// 配置中心：可调参数（键值）。读取优先级：环境变量 CONFIG_<KEY> > 本表 > @app/shared 里的默认值
+model SystemConfig {
+  key       String   @id
+  value     Json
+  updatedBy Int?     @map("updated_by")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("system_config")
+}
+model ModuleMigration {
+  module    String
+  name      String
+  appliedAt DateTime @default(now()) @map("applied_at")
+  @@id([module, name])
+  @@map("_module_migrations")
+}

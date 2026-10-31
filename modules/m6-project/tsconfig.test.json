@@ -1,0 +1,3 @@
+{ "$comment": "tests: base module settings + vitest types", "extends": "../../tsconfig.module.json",
+  "compilerOptions": { "types": ["node", "vitest"] },
+  "include": ["config.ts", "lib", "schema", "server", "test-utils", "web/buzz-cells.ts"] }

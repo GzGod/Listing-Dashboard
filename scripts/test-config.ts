@@ -1,0 +1,28 @@
+// pnpm test:config —— 配置中心：默认值 / 库 / 环境变量优先级，score_params 按日期取版本
+import { getPrisma } from "@app/db";
+import { ConfigCenter, validate } from "@app/core";
+const db = getPrisma(); const c = new ConfigCenter(db); let bad = 0;
+const eq = (name: string, a: unknown, b: unknown) => { const ok = JSON.stringify(a) === JSON.stringify(b); if (!ok) bad++; console.log(`${ok ? "✅" : "❌"} ${name}: ${JSON.stringify(a)}`); };
+eq("默认值 ranking.defaultWindow", await c.get("ranking.defaultWindow"), 7);
+await c.set("ranking.defaultWindow", 30); eq("库里改成 30", await c.get("ranking.defaultWindow"), 30);
+process.env.CONFIG_RANKING_DEFAULT_WINDOW = "1"; eq("环境变量 CONFIG_RANKING_DEFAULT_WINDOW 覆盖", await c.get("ranking.defaultWindow"), 1);
+delete process.env.CONFIG_RANKING_DEFAULT_WINDOW; await db.systemConfig.delete({ where: { key: "ranking.defaultWindow" } });
+await db.scoreParams.create({ data: { version: "test-v2", effectiveFrom: new Date("2026-10-15T00:00:00Z"), a: 2, b: 3 } });
+eq("2026-10-10 用的版本", (await c.scoreParams("2026-10-10"))?.version, "v1");
+eq("2026-10-20 用的版本", (await c.scoreParams("2026-10-20"))?.version, "test-v2");
+await db.scoreParams.delete({ where: { version: "test-v2" } });
+await db.kolTier.createMany({ data: [{ version: "test-k2", effectiveFrom: new Date("2026-10-15T00:00:00Z"), name: "S", weight: 5 }, { version: "test-k2", effectiveFrom: new Date("2026-10-15T00:00:00Z"), name: "A", weight: 4 }] });
+eq("2026-10-10 KOL 权重版本", (await c.kolTiers("2026-10-10"))?.version, "v1");
+eq("2026-10-20 KOL 权重", await c.kolTiers("2026-10-20"), { version: "test-k2", effectiveFrom: "2026-10-15", weights: { S: 5, A: 4 } });
+await db.kolTier.deleteMany({ where: { version: "test-k2" } });
+eq("配置键 posts.refetchDays 默认 7", await c.get("posts.refetchDays"), 7);
+eq("配置键 ranking.windows 默认 [1,7,30]", await c.get("ranking.windows"), [1, 7, 30]);
+c.addModuleDefaults([{ key: "m3-engine.dailyCron", default: "0 0 * * *" }, { key: "m3-engine.showDecimals", default: 2, public: true }]);
+eq("模块声明的配置键默认值", await c.get("m3-engine.dailyCron"), "0 0 * * *");
+const mk = (config: any[]) => validate({ apiVersion: 1, name: "m3-engine", version: "1.0.0", config });
+eq("pnpm check：不带模块前缀的键被拒", !!mk([{ key: "dailyCron", default: "x" }]), true);
+eq("pnpm check：和底座键重复被拒", !!mk([{ key: "posts.refetchDays", default: 3 }]), true);
+eq("pnpm check：旧的对象写法被拒", !!validate({ apiVersion: 1, name: "m3-engine", version: "1.0.0", config: { "m3-engine.a": 1 } as any }), true);
+eq("pnpm check：带前缀的键通过", mk([{ key: "m3-engine.dailyCron", default: "0 0 * * *" }]), null);
+eq("公开配置只含白名单 + public 键", Object.keys(await c.publicConfig()).sort(), ["m3-engine.showDecimals", "ranking.defaultWindow", "ranking.windows", "time.dayCutTimezone"]);
+await db.$disconnect(); console.log(bad ? `${bad} 项失败` : "全部通过"); process.exit(bad ? 1 : 0);

@@ -1,0 +1,1 @@
+{ "extends": "../../../tsconfig.module.web.json", "include": ["../../../apps/web/next-env.d.ts", "**/*.ts", "**/*.tsx"] }

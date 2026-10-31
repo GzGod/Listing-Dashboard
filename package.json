@@ -1,0 +1,61 @@
+{
+  "name": "listing-dashboard",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "typecheck": "pnpm -s db:generate >/dev/null && tsc -p tsconfig.json --noEmit && tsc -p tsconfig.modules.json --noEmit && tsc -p tsconfig.modules.web.json --noEmit && pnpm --filter @app/web typecheck",
+    "lint": "eslint . && pnpm depcheck",
+    "depcheck": "depcruise --config .dependency-cruiser.cjs packages apps modules",
+    "check": "tsx scripts/check-modules.ts",
+    "db:generate": "pnpm --filter @app/db generate",
+    "db:migrate": "pnpm --filter @app/db migrate:deploy",
+    "db:seed": "pnpm --filter @app/db seed",
+    "server": "tsx apps/server/src/main.ts",
+    "worker": "tsx apps/worker/src/main.ts",
+    "module:uninstall": "tsx scripts/uninstall-module.ts",
+    "module:new": "tsx scripts/new-module.ts",
+    "demo": "tsx scripts/demo-flow.ts",
+    "test:ownership": "tsx scripts/test-ownership.ts",
+    "test:config": "tsx scripts/test-config.ts",
+    "test:api": "tsx scripts/test-api.ts",
+    "test:shared": "tsx scripts/test-shared.ts",
+    "test:redis": "tsx scripts/test-redis.ts",
+    "test:migrate-race": "tsx scripts/test-migrate-race.ts",
+    "test:check": "tsx scripts/test-check.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.14.0",
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.23.1",
+    "dependency-cruiser": "^16.6.0",
+    "eslint": "^9.14.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "pg": "^8.23.1",
+    "tsx": "^4.19.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.14.0",
+    "vitest": "^5.0.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "esbuild",
+      "msgpackr-extract",
+      "sharp",
+      "unrs-resolver"
+    ]
+  },
+  "dependencies": {
+    "@app/core": "workspace:*",
+    "@app/db": "workspace:*",
+    "@app/shared": "workspace:*",
+    "bullmq": "^5.30.0",
+    "fastify": "^5.0.0"
+  }
+}

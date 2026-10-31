@@ -1,0 +1,17 @@
+{
+  "name": "@app/ui",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ../../tsconfig.json"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "react": "19.2.0",
+    "@types/react": "^19.0.0"
+  }
+}

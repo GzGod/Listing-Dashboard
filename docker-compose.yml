@@ -1,0 +1,66 @@
+# 一条命令：docker compose up --build
+# 打开 http://localhost:3000 登录 admin@local / admin123
+x-app: &app
+  build: .
+  image: listing-dashboard:dev
+  environment: &env
+    DATABASE_URL: postgresql://postgres:postgres@postgres:5432/dashboard?schema=public
+    REDIS_URL: redis://redis:6379
+    JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    MODULE_TOKEN: ${MODULE_TOKEN:-dev-module-token}
+    PY_EXAMPLE_URL: http://py-example:8001
+    API_URL: http://server:4000
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+
+services:
+  postgres:
+    image: postgres:16
+    environment: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: dashboard }
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U postgres"], interval: 3s, retries: 20 }
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 3s, retries: 20 }
+
+  # 建核心表 + 灌假数据（只跑一次就退出）
+  migrate:
+    <<: *app
+    command: sh -c "pnpm db:migrate && pnpm db:seed"
+
+  server:
+    <<: *app
+    command: pnpm server
+    ports: ["4000:4000"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    healthcheck: { test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/_core/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"], interval: 5s, retries: 30 }
+
+  worker:
+    <<: *app
+    command: pnpm worker
+    depends_on:
+      server: { condition: service_healthy }   # server 启动时执行模块迁移，worker 等它
+
+  web:
+    <<: *app
+    command: pnpm --filter @app/web start
+    ports: ["3000:3000"]
+    depends_on:
+      server: { condition: service_healthy }
+
+  # Python 外部服务模块示例
+  py-example:
+    build: ./modules/py-example
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/dashboard
+      CORE_URL: http://server:4000
+      MODULE_TOKEN: ${MODULE_TOKEN:-dev-module-token}
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+volumes:
+  pgdata:

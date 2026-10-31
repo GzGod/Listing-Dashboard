@@ -1,0 +1,2 @@
+{ "$comment": "module web code: extends the base tsconfig.module.web.json (local mirror)", "extends": "../../tsconfig.module.web.json",
+  "include": ["../../apps/web/next-env.d.ts", "web/**/*.ts", "web/**/*.tsx"], "exclude": ["node_modules"] }

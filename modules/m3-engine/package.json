@@ -1,0 +1,8 @@
+{
+  "name": "@modules/m3-engine",
+  "version": "0.4.1",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "tsx --test test/*.test.ts" },
+  "dependencies": { "@app/core": "workspace:*", "@app/shared": "workspace:*" }
+}

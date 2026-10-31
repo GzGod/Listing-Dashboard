@@ -1,0 +1,15 @@
+{
+  "name": "@modules/example",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@app/core": "workspace:*",
+    "@app/shared": "workspace:*",
+    "@app/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "react": "19.2.0",
+    "@types/react": "^19.0.0"
+  }
+}
