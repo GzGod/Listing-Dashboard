@@ -8,7 +8,7 @@ const day = (offset: number) => { const d = new Date(); d.setUTCHours(0, 0, 0, 0
 async function main() {
   await db.$executeRawUnsafe(`TRUNCATE exchanges, platforms, kol_tiers, score_params, system_config, buzz_adjustments, tracks, projects, project_contracts, project_aliases, price_snapshots,
     listing_events, people, person_tags, posts, post_mentions, buzz_snapshots, volume_snapshots, project_daily, users RESTART IDENTITY CASCADE`);
-  const pw = await bcrypt.hash("admin123", 10);
+  const pw = await bcrypt.hash(process.env.SEED_ADMIN_PASSWORD || "admin123", 10);
   await db.user.createMany({ data: [
     { email: "admin@local", name: "管理员", passwordHash: pw, role: "admin" },
     { email: "editor@local", name: "运营", passwordHash: pw, role: "editor" },
@@ -53,6 +53,6 @@ async function main() {
     await db.projectDaily.create({ data: { projectId: p.id, day: day(d), trackId: p.trackId!, volumeTrackRank: (i % 2) + 1, totalSpotVolumeUsd: 2e6 * (i + 1), priceUsd: 0.5 * (i + 1) } });
     await db.buzzSnapshot.create({ data: { projectId: p.id, day: day(d), trackId: p.trackId, trackRank: 2 - (i % 2), kolPostCount: 1, coreExposureCount: 1, heatScore: 100 * (i + 1), paramsVersion: "v1", tiersVersion: "v1", rawTotal: 100 * (i + 1), adjustedTotal: 100 * (i + 1) } });
   }
-  console.log("seed 完成：账号 admin@local / editor@local / viewer@local，密码 admin123");
+  console.log("seed 完成：账号 admin@local / editor@local / viewer@local，密码 " + (process.env.SEED_ADMIN_PASSWORD ? "(SEED_ADMIN_PASSWORD)" : "admin123"));
 }
 main().finally(() => db.$disconnect());
