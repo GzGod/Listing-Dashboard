@@ -6,7 +6,7 @@ import type { MenuItem } from "@app/shared";
 /** 统一外壳：顶栏 + 左侧菜单。菜单来自 /api/_core/menu（各模块 manifest 自动生成） */
 export function Shell({ area, children }: { area: "front" | "admin"; children: React.ReactNode }) {
   const [ready, setReady] = React.useState(false);
-  React.useEffect(() => { if (!getToken()) location.href = "/login"; else setReady(true); }, []);
+  React.useEffect(() => { if (!getToken() && process.env.NEXT_PUBLIC_AUTH_DISABLED !== "1") location.href = "/login"; else setReady(true); }, []);
   const menu = useApi<MenuItem[]>(ready ? "/api/_core/menu" : null);
   const user = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("dashboard_user") ?? "null") : null;
   const base = area === "admin" ? "/admin" : "";

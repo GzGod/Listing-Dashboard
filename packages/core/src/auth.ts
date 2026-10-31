@@ -34,6 +34,8 @@ export class Auth {
     app.addHook("onRequest", async (req) => {
       const h = req.headers.authorization;
       if (h?.startsWith("Bearer ")) { try { req.user = this.verify(h.slice(7)); } catch { throw new AppError(401, "UNAUTHORIZED", "登录已过期，请重新登录"); } }
+      // AUTH_DISABLED=1：演示模式，免登录，匿名请求按 admin 处理
+      if (!req.user && process.env.AUTH_DISABLED === "1") req.user = { id: 0, email: "demo@local", name: "演示", role: "admin" as Role };
       const url = req.url.split("?")[0];
       if (url.startsWith("/api/") && !publicPaths.some((r) => r.test(url)) && !req.user) throw new AppError(401, "UNAUTHORIZED", "请先登录");
     });
