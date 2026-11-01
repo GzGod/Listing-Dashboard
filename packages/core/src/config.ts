@@ -20,7 +20,7 @@ export class ConfigCenter {
   async publicConfig() { const out: Record<string, unknown> = {}; for (const k of this.publicKeys) out[k] = await this.get(k); return out; }
   private def(key: string) { return key in CONFIG_DEFAULTS ? (CONFIG_DEFAULTS as Record<string, unknown>)[key] : this.moduleDefaults[key]; }
   private fromEnv(key: string): unknown {
-    const raw = process.env[configEnvName(key)]; if (raw === undefined) return undefined;
+    const raw = process.env[configEnvName(key)]; if (raw === undefined || raw.trim() === "") return undefined;
     try { return JSON.parse(raw); } catch { return raw; }
   }
   async get<K extends ConfigKey>(key: K): Promise<ConfigValue<K>>;

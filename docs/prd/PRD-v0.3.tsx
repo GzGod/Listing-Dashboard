@@ -11,6 +11,7 @@ export default function App() {
         <Properties items={[
           { label: "文档版本", value: "v0.3（应用开发 v0.2 评审与产品决策）" },
           { label: "状态", value: "开发评审已通过；等待老板对第 14 节待确认问题的决策及启动指令，暂不开发" },
+          { label: "细则与验收", value: "docs/prd/PRD-v0.3-detail.md（字段细则、null/0 区分、流程分支、验收矩阵、待决清单；本文为主 PRD，细则文件为补充，不替代本文）" },
           { label: "日期", value: "2026-10-29" },
           { label: "来源", value: "Crypto 上币看板产品方案讨论会 会议纪要及配图" },
           { label: "产品顾问", value: "发起人（说话人1），随时答疑" },
@@ -189,6 +190,7 @@ export default function App() {
       </Section>
 
       <Section heading="9. 数据来源">
+        <Callout tone="info">当前阶段老 Lumina 与龙哥系统先占位；原来源规划保留，实际接入时间/方式待确认，不生成虚构评级；当前实现与待决细节见配套文档 docs/prd/PRD-v0.3-detail.md。</Callout>
         <Table columns={["维度", "核心内容", "展示规则", "数据来源"]} rows={[
           ["项目基本面", "Cap table + 团队背景", "龙哥团队产出评级", "龙哥成熟研究系统"],
           ["赛道与运营数据", "赛道分类、用户量、收入", "客观事实展示", "龙哥成熟研究系统"],

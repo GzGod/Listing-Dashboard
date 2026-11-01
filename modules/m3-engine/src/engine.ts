@@ -21,7 +21,7 @@ export async function computeDay(ctx: ModuleContext, day: string, versionDay: st
   const date = toDate(day);
   // 不按项目过滤：平分模式要知道每帖提到几个项目。时间窗放宽 ±1 天，再按切日时区精确归日
   const raw = await db.postMention.findMany({
-    where: { status: "confirmed", post: { postedAt: { gte: toDate(addDays(day, -1)), lt: toDate(addDays(day, 2)) } } },
+    where: { status: "confirmed", post: { platform: { enabled: true }, postedAt: { gte: toDate(addDays(day, -1)), lt: toDate(addDays(day, 2)) } } },
     include: { post: { include: { person: { include: { tags: true } } } } },
   });
   const mentions: MentionInput[] = raw.map((m) => ({

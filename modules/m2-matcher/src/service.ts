@@ -16,14 +16,15 @@ export async function matchPosts(ctx: ModuleContext, postIds: number[]) {
   const c = await loadConfig(ctx); const idx = buildIndex(await loadProjects(ctx));
   const posts = await ctx.db.core.post.findMany({ where: { id: { in: postIds } } });
   let confirmed = 0, pending = 0;
+  const changedDays = new Set<string>();
   for (const post of posts) {
     const r = matchText(post.text ?? "", idx, c);
     const want = new Map<number, { status: string; method: string }>();
     for (const g of r.pending) for (const h of g.candidates) want.set(h.projectId, { status: STATUS.pending, method: h.method });
     for (const h of r.confirmed) want.set(h.projectId, { status: STATUS.confirmed, method: h.method });
     const existing = await ctx.db.core.postMention.findMany({ where: { postId: post.id } });
-    const human = new Set(existing.filter((m) => m.reviewedBy != null).map((m) => m.projectId));
-    const auto = existing.filter((m) => m.reviewedBy == null);
+    const human = new Set(existing.filter((m) => m.reviewedBy != null || m.reviewedAt != null).map((m) => m.projectId));
+    const auto = existing.filter((m) => m.reviewedBy == null && m.reviewedAt == null);
     const ops: any[] = [];
     const stale = auto.filter((m) => !want.has(m.projectId)).map((m) => m.id);
     if (stale.length) ops.push(ctx.db.core.postMention.deleteMany({ where: { id: { in: stale }, reviewedBy: null } }));
@@ -34,7 +35,18 @@ export async function matchPosts(ctx: ModuleContext, postIds: number[]) {
       else ops.push(ctx.db.core.postMention.create({ data: { postId: post.id, projectId, matchMethod: w.method, status: w.status } }));
       if (w.status === STATUS.confirmed) confirmed++; else pending++;
     }
-    if (ops.length) await ctx.db.core.$transaction(ops);
+    if (ops.length) {
+      await ctx.db.core.$transaction(ops);
+    }
+    // 事件投递失败后的重试也必须触发日批，即使 mention 行已在上次写完。
+    // 加入完整回抓窗口（dateFrom ~ dateTo），不能只加发帖日，否则回抓窗口内的后续日不会重算。
+    const range = affectedRange(post.postedAt, c.refetchDays, c.tz);
+    changedDays.add(range.dateFrom);
+    changedDays.add(range.dateTo);
+  }
+  if (changedDays.size) {
+    const dates = [...changedDays].sort();
+    await ctx.events.emit("recalc.requested", { reason: "mention_changed", dateFrom: dates[0], dateTo: dates[dates.length - 1] });
   }
   return { posts: posts.length, confirmed, pending };
 }

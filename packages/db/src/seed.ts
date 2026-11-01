@@ -8,6 +8,13 @@ const day = (offset: number) => { const d = new Date(); d.setUTCHours(0, 0, 0, 0
 async function main() {
   await db.$executeRawUnsafe(`TRUNCATE exchanges, platforms, kol_tiers, score_params, system_config, buzz_adjustments, tracks, projects, project_contracts, project_aliases, price_snapshots,
     listing_events, people, person_tags, posts, post_mentions, buzz_snapshots, volume_snapshots, project_daily, users RESTART IDENTITY CASCADE`);
+  // 种子是明确的演示模式，不能让公共行情给虚构项目灌入真实同名代币数据。
+  await db.systemConfig.createMany({ data: [
+    { key: "m1-collector.marketSource", value: "mock" },
+    { key: "m1-collector.xSource", value: "mock" },
+  ] });
+  const states = await db.$queryRawUnsafe<{ tablename: string }[]>("SELECT tablename FROM pg_tables WHERE schemaname=current_schema() AND tablename IN ('m_m1_collector_cursors','m_m1_collector_runs','m_m1_collector_locks','m_m1_collector_outbox','m_m1_collector_source_rates')");
+  for (const { tablename } of states) await db.$executeRawUnsafe(`TRUNCATE "${tablename}"`);
   const pw = await bcrypt.hash("admin123", 10);
   await db.user.createMany({ data: [
     { email: "admin@local", name: "管理员", passwordHash: pw, role: "admin" },
@@ -48,8 +55,8 @@ async function main() {
     const post = await db.post.create({ data: { personId: people[i].id, platformId: x.id, platformPostId: `fake-${d}-${i}`, postedAt: day(d),
       views: 1000 * (i + 1) - d * 37, bookmarks: 10 * (i + 1), url: `https://x.com/${people[i].handle}/status/${Math.abs(d)}${i}`, text: `$${p.symbol} looks good` } });
     await db.postMention.create({ data: { postId: post.id, projectId: p.id, matchMethod: "ticker", status: "confirmed" } });
-    for (const ex of [binance, okx]) await db.volumeSnapshot.create({ data: { projectId: p.id, exchangeId: ex.id, day: day(d), spotVolumeUsd24h: 1e6 * (i + 1) + d * 1000 } });
-    await db.priceSnapshot.create({ data: { projectId: p.id, day: day(d), priceUsd: d === -3 && i === 3 ? null : 0.5 * (i + 1) } });
+    for (const ex of [binance, okx]) await db.volumeSnapshot.create({ data: { projectId: p.id, exchangeId: ex.id, day: day(d), spotVolumeUsd24h: 1e6 * (i + 1) + d * 1000, source: "mock" } });
+    await db.priceSnapshot.create({ data: { projectId: p.id, day: day(d), priceUsd: d === -3 && i === 3 ? null : 0.5 * (i + 1), source: "mock" } });
     await db.projectDaily.create({ data: { projectId: p.id, day: day(d), trackId: p.trackId!, volumeTrackRank: (i % 2) + 1, totalSpotVolumeUsd: 2e6 * (i + 1), priceUsd: 0.5 * (i + 1) } });
     await db.buzzSnapshot.create({ data: { projectId: p.id, day: day(d), trackId: p.trackId, trackRank: 2 - (i % 2), kolPostCount: 1, coreExposureCount: 1, heatScore: 100 * (i + 1), paramsVersion: "v1", tiersVersion: "v1", rawTotal: 100 * (i + 1), adjustedTotal: 100 * (i + 1) } });
   }

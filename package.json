@@ -24,7 +24,9 @@
     "test:shared": "tsx scripts/test-shared.ts",
     "test:redis": "tsx scripts/test-redis.ts",
     "test:migrate-race": "tsx scripts/test-migrate-race.ts",
-    "test:check": "tsx scripts/test-check.ts"
+    "test:check": "tsx scripts/test-check.ts",
+    "test:sources": "tsx --test modules/m1-collector/test/*.test.ts modules/m2-matcher/test/*.test.ts modules/m3-engine/test/*.test.ts",
+    "test:sources:integration": "tsx --test tests/integration/data-sources.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.14.0",

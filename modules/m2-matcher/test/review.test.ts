@@ -50,7 +50,7 @@ test("队列按帖子分组，暴露 postId 和候选列表", async () => {
   assert.deepEqual(q[0].candidates.map((c) => c.projectId).sort(), [1, 2, 4]);
 });
 test("多选确认：选中的 confirmed，其余 rejected（不删），一次事件覆盖全部受影响项目", async () => {
-  const { ctx, mentions, emitted, audits } = fakeCtx(); await matchPosts(ctx, [10]);
+  const { ctx, mentions, emitted, audits } = fakeCtx(); await matchPosts(ctx, [10]); emitted.length = 0;
   const r = await resolvePost(ctx, 10, { projectIds: [2, 4, 2] }, 7);
   assert.deepEqual(others(mentions), [[1, "rejected"], [2, "confirmed"], [4, "confirmed"]]);
   assert.equal(mentions.length, 4);
@@ -62,7 +62,7 @@ test("多选确认：选中的 confirmed，其余 rejected（不删），一次�
   assert.equal((await reviewQueue(ctx)).length, 0);
 });
 test("空数组 = 全部驳回；重复审核 404；重跑匹配不改回 pending", async () => {
-  const { ctx, mentions, emitted } = fakeCtx(); await matchPosts(ctx, [10]);
+  const { ctx, mentions, emitted } = fakeCtx(); await matchPosts(ctx, [10]); emitted.length = 0;
   await resolvePost(ctx, 10, { projectIds: [] }, 7);
   assert.deepEqual(others(mentions), [[1, "rejected"], [2, "rejected"], [4, "rejected"]]);
   assert.deepEqual((emitted[0][1] as any).projectIds.sort(), [1, 2, 4]);
@@ -71,7 +71,7 @@ test("空数组 = 全部驳回；重复审核 404；重跑匹配不改回 pendin
   assert.deepEqual(others(mentions), [[1, "rejected"], [2, "rejected"], [4, "rejected"]]);
 });
 test("非候选 id → 400，且不改任何行；非整数/非数组 → 400；未知帖子 → 404", async () => {
-  const { ctx, mentions, emitted } = fakeCtx(); await matchPosts(ctx, [10]);
+  const { ctx, mentions, emitted } = fakeCtx(); await matchPosts(ctx, [10]); emitted.length = 0;
   await assert.rejects(resolvePost(ctx, 10, { projectIds: [2, 3] }), /不在该帖候选/); // 3 是已 confirmed 的 APE，不是 pending 候选
   await assert.rejects(resolvePost(ctx, 10, { projectIds: [1.5] }), /整数数组/);
   await assert.rejects(resolvePost(ctx, 10, { projectIds: "1" }), /整数数组/);
@@ -104,4 +104,11 @@ test("队列 matchedAlias / matchedText 是帖子里实际命中的别名，不�
   const [q] = await reviewQueue(ctx);
   assert.equal(q.matchedAlias, "$TIEC");
   assert.ok(q.candidates.every((c) => c.matchedText === "$TIEC"));
+});
+
+test("采集事件重试仍触发重算，避免 mention 已写完而日批事件丢失", async () => {
+  const { ctx, emitted } = fakeCtx();
+  await matchPosts(ctx, [10]); await matchPosts(ctx, [10]);
+  assert.equal(emitted.length, 2);
+  assert.deepEqual(emitted[1], ["recalc.requested", { reason: "mention_changed", dateFrom: "2026-10-28", dateTo: TO }]);
 });

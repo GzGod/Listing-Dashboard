@@ -90,7 +90,7 @@ export const projectDetailSchema = z.object({
 export type ProjectDetail = z.infer<typeof projectDetailSchema>;
 
 export const postSchema = z.object({
-  postId: z.number().int(), url: z.string().url(), platform: z.string(), postedAt: z.string(), views: z.number(), bookmarks: z.number(),
+  postId: z.number().int(), url: z.string().url(), platform: z.string(), postedAt: z.string(), views: z.number().nullable(), bookmarks: z.number().nullable(),
   author: z.object({ personId: z.number().int(), name: z.string(), handle: z.string(), kolTier: z.string().nullable(), tags: z.array(z.string()) }),
   matchType: z.string(),
 });

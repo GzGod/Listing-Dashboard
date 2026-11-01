@@ -6,15 +6,16 @@ export interface MatchResult { confirmed: Hit[]; pending: { term: string; method
 export interface Scores { scoreContract: number; scoreCashtag: number; scoreName: number; scoreBareTicker: number; autoConfirmThreshold: number; minTickerLength: number }
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const contractKey = (s: string) => /^0x[a-f0-9]{40}$/i.test(s) ? s.toLowerCase() : s;
 export function buildIndex(projects: ProjectRef[]) {
   const tickers = new Map<string, Set<number>>(), names = new Map<string, Set<number>>(), contracts = new Map<string, Set<number>>();
   const add = (m: Map<string, Set<number>>, k: string, id: number) => { if (k) m.set(k, (m.get(k) ?? new Set()).add(id)); };
   for (const p of projects) {
     add(tickers, p.symbol.toUpperCase(), p.id); add(names, p.name.toLowerCase(), p.id);
-    for (const c of p.contracts) add(contracts, c.toLowerCase(), p.id);
+    for (const c of p.contracts) add(contracts, contractKey(c), p.id);
     for (const a of p.aliases) {
       if (a.kind === "ticker") add(tickers, a.alias.replace(/^\$/, "").toUpperCase(), p.id);
-      else if (a.kind === "contract") add(contracts, a.alias.toLowerCase(), p.id);
+      else if (a.kind === "contract") add(contracts, contractKey(a.alias), p.id);
       else add(names, a.alias.toLowerCase(), p.id);
     }
   }
@@ -25,8 +26,8 @@ export type Index = ReturnType<typeof buildIndex>;
 export function matchText(text: string, idx: Index, s: Scores): MatchResult {
   const groups: { term: string; method: Method; ids: Set<number>; conf: number }[] = [];
   const lower = text.toLowerCase();
-  for (const m of lower.matchAll(/0x[a-f0-9]{40}|[1-9a-hj-np-z]{32,44}/gi)) {
-    const ids = idx.contracts.get(m[0].toLowerCase()); if (ids) groups.push({ term: m[0], method: "contract", ids, conf: s.scoreContract });
+  for (const m of text.matchAll(/\b(?:0[xX][a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})\b/g)) {
+    const ids = idx.contracts.get(contractKey(m[0])); if (ids) groups.push({ term: m[0], method: "contract", ids, conf: s.scoreContract });
   }
   const seenTicker = new Set<string>();
   for (const m of text.matchAll(/\$([A-Za-z][A-Za-z0-9]{0,14})\b/g)) {

@@ -5,7 +5,7 @@
 import type { ApiListingStage, PostsResponse, ProjectDetail, SeriesResponse } from '../schema/index.js';
 
 export type ProjectVM = ProjectDetail; // detail DTO is already view-shaped; keep alias so components never import DTOs
-export interface PostVM { id: number; url: string; postedAt: string; views: number; bookmarks: number; authorName: string; handle: string; kolTier: string | null; tags: string[]; matchType: string }
+export interface PostVM { id: number; url: string; postedAt: string; views: number | null; bookmarks: number | null; authorName: string; handle: string; kolTier: string | null; tags: string[]; matchType: string }
 export interface PostsPageVM { items: PostVM[]; nextCursor: string | null }
 export interface ListingMarkVM { id: number; date: string; stage: ApiListingStage; exchange: string; pair: string | null; url: string | null }
 export interface SeriesVM {

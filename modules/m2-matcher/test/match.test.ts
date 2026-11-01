@@ -34,10 +34,10 @@ test("合约地址能消歧重名 ticker", () => {
   assert.deepEqual(r.confirmed.map((h) => h.projectId), [1]);
   assert.equal(r.pending.length, 0);
 });
-test("裸 ticker 低置信 → pending", () => {
+test("PRD 唯一裸 ticker → confirmed", () => {
   const r = matchText("POOL looks fine", idx, S);
-  assert.equal(r.confirmed.length, 0);
-  assert.deepEqual(r.pending[0].candidates.map((c) => c.projectId), [4]);
+  assert.deepEqual(r.confirmed.map((h) => h.projectId), [4]);
+  assert.equal(r.pending.length, 0);
 });
 test("阈值可配置：调低后裸 ticker 自动确认", () => {
   const r = matchText("POOL looks fine", idx, { ...S, autoConfirmThreshold: 0.4 });
@@ -55,4 +55,11 @@ test("dateTo 不超过今天（截到今天）", () => {
 });
 test("按北京时间切日：UTC 16:30 已是北京次日", () => {
   assert.deepEqual(affectedRange(new Date("2026-10-28T16:30:00Z"), 7, "Asia/Shanghai", new Date("2026-10-30T17:00:00Z")), { dateFrom: "2026-10-29", dateTo: "2026-10-31" });
+});
+
+test("Base58 合约地址区分大小写，不把不同链上身份串起来", () => {
+  const address = "Abcdefghijkmnpqrstuvwxyz123456789AB";
+  const index = buildIndex([{ id: 5, name: "Example", symbol: "EX", contracts: [address], aliases: [] }]);
+  assert.deepEqual(matchText(`CA: ${address}`, index, S).confirmed.map((p) => p.projectId), [5]);
+  assert.equal(matchText(`CA: ${address.toLowerCase()}`, index, S).confirmed.length, 0);
 });
