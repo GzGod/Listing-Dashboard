@@ -47,7 +47,7 @@ export const parseReviewInput = (b: any): number[] | null => (Array.isArray(b?.p
 /** 本模块配置键（manifest config 声明，前缀 m4-admin.；可被 system_config / CONFIG_M4_ADMIN_* 覆盖） */
 export const CONFIG = [
   { key: "m4-admin.m2BasePath", default: "/api/m2-matcher", description: "M2 在底座下的路径前缀（进程内经底座路由调用，不需要底座地址/端口）" },
-  { key: "m4-admin.m2Mock", default: "auto", description: "枚举 auto|on|off：auto=M2 不可达时退回假数据；on=只用假数据；off=只用真 M2（不可达返回 502/503）" },
+  { key: "m4-admin.m2Mock", default: "off", description: "枚举 auto|on|off：默认 off；on 为显式演示模式；auto 为演示兼容模式" },
   { key: "m4-admin.m2TimeoutMs", default: 5000, description: "调 M2 超时" },
   { key: "m4-admin.backfillFrom", default: "2025-01-01", description: "手动回算默认起点（按 time.dayCutTimezone 切日的日期）", public: true },
 ] as const;
@@ -56,8 +56,8 @@ const def = (k: CfgKey) => CONFIG.find((c) => c.key === k)!.default;
 
 export const M2_MOCK_MODES = ["auto", "on", "off"] as const;
 export type M2MockMode = (typeof M2_MOCK_MODES)[number];
-/** 非法值（含布尔）一律按 auto 处理 */
-export const toM2Mock = (v: unknown): M2MockMode => ((M2_MOCK_MODES as readonly unknown[]).includes(v) ? (v as M2MockMode) : "auto");
+/** 非法值（含布尔）关闭假数据回退 */
+export const toM2Mock = (v: unknown): M2MockMode => ((M2_MOCK_MODES as readonly unknown[]).includes(v) ? (v as M2MockMode) : "off");
 
 /** 赛道停用开关：底座 tracks.disabled_at 列上线后自动启用（检测 information_schema，结果缓存） */
 let tracksDisableCache: boolean | null = null;

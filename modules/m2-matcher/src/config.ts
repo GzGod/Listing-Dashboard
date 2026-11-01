@@ -6,7 +6,7 @@ export const DEFAULTS = {
   scoreContract: 1.0,             // 合约地址命中
   scoreCashtag: 0.9,              // $TICKER 命中（唯一）
   scoreName: 0.85,                // 项目全名/名称别名命中
-  scoreBareTicker: 0.5,           // 不带 $ 的大写 ticker 命中
+  scoreBareTicker: 0.9,           // PRD：唯一大写 ticker 命中可确认，同名才排队
   minTickerLength: 2,             // 太短的 ticker 不做裸词匹配
   reviewPageSize: 50,
 } as const;

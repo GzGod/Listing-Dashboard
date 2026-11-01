@@ -29,20 +29,23 @@ export function useApi<T = any>(path: string | null) {
   React.useEffect(load, [load]);
   return { ...state, reload: load };
 }
-const box: React.CSSProperties = { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: 16, marginBottom: 16 };
+import { ds } from "./tokens";
+const box: React.CSSProperties = { background: ds.surface, border: `1px solid ${ds.border}`, borderRadius: ds.rMd, padding: 16, marginBottom: 16 };
 export const Card = ({ title, children }: { title?: string; children: React.ReactNode }) => (
-  <section style={box}>{title && <h3 style={{ margin: "0 0 12px", fontSize: 16 }}>{title}</h3>}{children}</section>);
-export const Button = (p: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-  <button {...p} style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #2563eb", background: "#2563eb", color: "#fff", cursor: "pointer", ...p.style }} />);
+  <section style={box}>{title && <h3 style={{ margin: "0 0 12px", fontSize: ds.txLg, color: ds.text }}>{title}</h3>}{children}</section>);
+export const Button = ({ type = "button", ...p }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+  <button type={type} {...p} style={{ padding: "6px 14px", borderRadius: ds.r, border: `1px solid ${ds.accent}`, background: ds.accent, color: "#fff", cursor: "pointer", fontSize: ds.txBase, fontWeight: 500, ...p.style }} />);
 export const Input = (p: React.InputHTMLAttributes<HTMLInputElement>) => (
-  <input {...p} style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db", ...p.style }} />);
-export function Table<T extends Record<string, any>>({ rows, columns }: { rows: T[]; columns: { key: keyof T & string; title: string }[] }) {
-  return (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-    <thead><tr>{columns.map((c) => <th key={c.key} style={{ textAlign: "left", borderBottom: "1px solid #e5e7eb", padding: 6 }}>{c.title}</th>)}</tr></thead>
-    <tbody>{rows.map((r, i) => <tr key={i}>{columns.map((c) => <td key={c.key} style={{ borderBottom: "1px solid #f3f4f6", padding: 6 }}>{String(r[c.key] ?? "")}</td>)}</tr>)}</tbody>
+  <input {...p} style={{ padding: "6px 10px", borderRadius: ds.r, border: `1px solid ${ds.border}`, background: ds.surface, color: ds.text, fontSize: ds.txBase, outline: "none", ...p.style }} />);
+export function Table<T extends Record<string, any>>({ rows, columns, emptyText = "暂无数据" }: { rows: T[]; columns: { key: keyof T & string; title: string }[]; emptyText?: string }) {
+  return (<table style={{ width: "100%", borderCollapse: "collapse", fontSize: ds.txMd }}>
+    <thead><tr>{columns.map((c) => <th key={c.key} style={{ textAlign: "left", borderBottom: `1px solid ${ds.border}`, padding: 6, color: ds.text2, fontWeight: 500, fontSize: ds.txSm }}>{c.title}</th>)}</tr></thead>
+    <tbody>{rows.length === 0
+      ? <tr><td colSpan={columns.length} style={{ color: ds.text3, padding: 24, textAlign: "center" }}>{emptyText}</td></tr>
+      : rows.map((r, i) => <tr key={i}>{columns.map((c) => <td key={c.key} style={{ borderBottom: `1px solid ${ds.borderLight}`, padding: 6, color: ds.text }}>{String(r[c.key] ?? "")}</td>)}</tr>)}</tbody>
   </table>);
 }
-export const Empty = ({ text = "暂无数据" }: { text?: string }) => <div style={{ color: "#9ca3af", padding: 24, textAlign: "center" }}>{text}</div>;
+export const Empty = ({ text = "暂无数据" }: { text?: string }) => <div style={{ color: ds.text3, padding: 24, textAlign: "center" }}>{text}</div>;
 
 /** 前端可读配置（/api/_core/config/public：time.dayCutTimezone、ranking.windows、ranking.defaultWindow + 模块 public 键）。带缓存 */
 let configPromise: Promise<Record<string, unknown>> | null = null;
@@ -52,6 +55,11 @@ export function useConfig<T = unknown>(key?: string): { value?: T; all?: Record<
   React.useEffect(() => { getConfig().then((all) => set({ all, loading: false })).catch((e) => set({ error: e.message, loading: false })); }, []);
   return { ...st, value: key ? (st.all?.[key] as T) : undefined };
 }
+// 通用布局/视觉组件（独立命名文件，通过公共出口复用）
+export { PageHeader, StatusBadge, FormRow, FieldGroup } from "./layout";
+// 设计系统 tokens
+export { ds } from "./tokens";
+
 /** 模块页面组件收到的 props（动态路由参数 + 查询参数） */
 export interface ModulePageProps { params: Record<string, string>; searchParams: Record<string, string> }
 /** 把 manifest 里的路由模式（如 "/notes/:id"）和实际路径匹配，返回参数；不匹配返回 null */

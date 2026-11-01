@@ -75,11 +75,17 @@ export function registerRoutes(ctx: ModuleContext) {
   const bad = (msg: string) => new AppError(400, "BAD_INPUT", msg);
   const projectData = (b: any, isCreate: boolean) => {
     const o: any = { ...b };
+    for (const k of ["name", "symbol", "coingeckoId", "xHandle", "usersSource", "revenueSource"])
+      if (typeof o[k] === "string") o[k] = o[k].trim();
+    if (typeof o.symbol === "string") o.symbol = o.symbol.toUpperCase();
+    if (typeof o.coingeckoId === "string") o.coingeckoId = o.coingeckoId.toLowerCase();
     if (o.trackId !== undefined) o.trackId = num(o.trackId);
     // 赛道必填：没有 track_id 的项目 M3 不写 project_daily（schema 里可空，这里由 M4 强制）
     if ((isCreate || o.trackId !== undefined) && (o.trackId == null || !Number.isInteger(o.trackId) || o.trackId <= 0)) throw bad("赛道必填（请选择一级或细分赛道）");
     if (o.usersCount !== undefined) o.usersCount = num(o.usersCount);
+    if (o.usersCount != null && (!Number.isSafeInteger(o.usersCount) || o.usersCount < 0)) throw bad("用户量需为非负整数");
     if (o.revenueUsd !== undefined) o.revenueUsd = o.revenueUsd === "" || o.revenueUsd == null ? null : String(o.revenueUsd);
+    if (o.revenueUsd != null && (!Number.isFinite(Number(o.revenueUsd)) || Number(o.revenueUsd) < 0)) throw bad("收入需为有限非负金额");
     for (const k of PROJECT_DATE_FIELDS) if (o[k] !== undefined) o[k] = o[k] ? day(o[k]) : null;
     for (const k of ["coingeckoId", "logoUrl", "websiteUrl", "xHandle", "docsUrl", "usersSource", "revenueSource", "longgeRating", "revenuePeriod"]) if (o[k] === "") o[k] = null;
     if (o.revenuePeriod != null && !RevenuePeriodSchema.safeParse(o.revenuePeriod).success) throw bad("revenuePeriod 只能是 30d / quarter / year");

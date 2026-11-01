@@ -3,7 +3,7 @@ import { competitionRank } from "@app/shared";
 
 export interface ParamsRow { version: string; a: number; b: number }
 export interface TierSet { version: string; weights: Record<string, number> }
-export interface MentionInput { postId: number; projectId: number; day: string; views: number; bookmarks: number; status: string; inPool: boolean; tier: string | null; tags: string[] }
+export interface MentionInput { postId: number; projectId: number; day: string; views: number | null; bookmarks: number | null; status: string; inPool: boolean; tier: string | null; tags: string[] }
 export interface DayScore { projectId: number; day: string; kolPostCount: number; coreExposureCount: number; heatScore: number; rawTotal: number; paramsVersion: string; tiersVersion: string | null }
 export interface ScoreOpt { defaultTierWeight: number; coreTags: string[]; fullScore: boolean }
 
@@ -15,6 +15,10 @@ export function scoreDay(projectId: number, day: string, mentions: MentionInput[
   const ok = mentions.filter(countable);
   const mine = new Map(ok.filter((m) => m.projectId === projectId && m.day === day).map((m) => [m.postId, m]));
   if (!mine.size) return null;
+  const valid = (n: number | null) => n != null && Number.isFinite(n) && n >= 0;
+  if (!valid(params.a) || !valid(params.b)) return null;
+  // 任一所需指标缺失则该日声量不完整，不能用 0 代替进入排名；系数为 0 的项不要求数据。
+  if ([...mine.values()].some((m) => (params.a !== 0 && !valid(m.views)) || (params.b !== 0 && !valid(m.bookmarks)))) return null;
   const nProj = new Map<number, Set<number>>();
   for (const m of ok) nProj.set(m.postId, (nProj.get(m.postId) ?? new Set()).add(m.projectId));
   const core = new Set(opt.coreTags);
@@ -22,10 +26,11 @@ export function scoreDay(projectId: number, day: string, mentions: MentionInput[
   for (const m of mine.values()) {
     const w = (m.tier != null ? tiers?.weights[m.tier] : undefined) ?? opt.defaultTierWeight;
     const share = opt.fullScore ? 1 : 1 / (nProj.get(m.postId)?.size ?? 1);
-    heat += share * w * (params.a * m.views + params.b * m.bookmarks);
+    if (!valid(w)) return null;
+    heat += share * w * (params.a * (m.views ?? 0) + params.b * (m.bookmarks ?? 0));
     if (m.tags.some((t) => core.has(t))) coreN++;
   }
-  return { projectId, day, kolPostCount: mine.size, coreExposureCount: coreN, heatScore: heat, rawTotal: heat, paramsVersion: params.version, tiersVersion: tiers?.version ?? null };
+  return Number.isFinite(heat) ? { projectId, day, kolPostCount: mine.size, coreExposureCount: coreN, heatScore: heat, rawTotal: heat, paramsVersion: params.version, tiersVersion: tiers?.version ?? null } : null;
 }
 export interface AdjustmentRow { value: number; createdAt: string; revoked: boolean }
 /** 只调总分：adjusted = 未撤销调整里最新一条 ?? raw；子项永远是原始值 */
@@ -66,10 +71,11 @@ export function dailyRow(vol: number | null | undefined, price: number | null | 
   if (vol == null && price == null) return null;
   return { totalSpotVolumeUsd: vol ?? null, priceUsd: price ?? null };
 }
-/** 当天各交易所成交额求和；全为 null → null */
+/** NULL 行表示应采集的数据缺失；部分交易所失败时不能用不完整总量排名。 */
 export function sumVolume(vals: (number | null)[]): number | null {
-  const v = vals.filter((x): x is number => x != null);
-  return v.length ? v.reduce((s, x) => s + x, 0) : null;
+  if (!vals.length || vals.some((x) => x == null || !Number.isFinite(x) || x < 0)) return null;
+  const sum = (vals as number[]).reduce((s, x) => s + x, 0);
+  return Number.isFinite(sum) ? sum : null;
 }
 export type Reason = "weights_changed" | "manual_adjust" | "mention_changed" | "manual_backfill";
 /**

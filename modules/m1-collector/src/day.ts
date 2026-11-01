@@ -12,3 +12,15 @@ export function inRefetchWindow(postedAt: Date, refetchDays: number, tz: string,
 }
 /** 日期字段存库：@db.Date 用该日 00:00Z 表示 */
 export const dbDate = (day: string) => new Date(day + "T00:00:00Z");
+
+/** 指定时区本地午夜对应的 UTC 时间，二次校正覆盖夏令时。 */
+export function dayStartMs(day: string, tz: string): number {
+  const guess = Date.parse(day + "T00:00:00Z");
+  const offset = (t: number) => {
+    const parts = new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(new Date(t));
+    const get = (k: string) => Number(parts.find((p) => p.type === k)?.value);
+    return Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second")) - t;
+  };
+  let t = guess - offset(guess); t = guess - offset(t);
+  return t;
+}

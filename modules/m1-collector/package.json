@@ -1,7 +1,8 @@
 {
   "name": "@modules/m1-collector",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "dependencies": { "@app/core": "workspace:*", "@app/shared": "workspace:*" }
+  "dependencies": { "@app/core": "workspace:*", "@app/shared": "workspace:*", "@app/ui": "workspace:*" },
+  "devDependencies": { "react": "19.2.0", "@types/react": "^19.0.0" }
 }

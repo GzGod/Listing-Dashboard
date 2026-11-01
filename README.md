@@ -41,3 +41,9 @@ pnpm --filter @app/web build && (cd apps/web && npx next start -p 3000)
 | `m6-project` | 前台项目详情页与联动图（依赖 `echarts`） |
 
 其他目录：`docs/prd/PRD-v0.3.tsx`（PRD），`tests/integration/it-m4.ts`（M4 集成测试），`scripts/demo/`（演示数据和冒烟脚本，登录信息通过命令行参数传入）。
+
+## 数据源优化
+
+管理员在「后台 → 数据源管理」查看来源状态、分页断点、缺失项目、错误记录，并维护交易所资产映射。行情按完整历史日采集，缺失指标保留 NULL 并退出对应排名；采集事件支持失败后恢复。X 默认未接入，老 Lumina 和龙哥研究系统先占位，基本面与上币节点按 PRD MVP 手动维护。
+
+`db:seed` 显式使用演示来源并显示提示。真实接入的密钥、日期与单位口径、迁移和测试说明见 [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md)。

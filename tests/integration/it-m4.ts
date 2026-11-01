@@ -205,7 +205,7 @@ setCfg("m4-admin.m2Mock", "auto");
   ok("M2 不可达提交 + off → 502", r.statusCode === 502);
   setCfg("m4-admin.m2Mock", true);
   r = await I("GET", "/review-queue");
-  ok("m2Mock 非法值（布尔）按 auto 处理", r.statusCode === 200 && r.json().source === "mock");
+  ok("m2Mock 非法值（布尔）关闭假数据回退", r.statusCode === 502);
   setCfg("m4-admin.m2Mock", "auto");
 
   // ---- 审计 + tables.writes 一致性 ----

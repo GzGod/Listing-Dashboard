@@ -10,6 +10,12 @@ x-app: &app
     MODULE_TOKEN: ${MODULE_TOKEN:-dev-module-token}
     PY_EXAMPLE_URL: http://py-example:8001
     API_URL: http://server:4000
+    X_BEARER_TOKEN: ${X_BEARER_TOKEN:-}
+    COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
+    CONFIG_M1_COLLECTOR_X_SOURCE: ${CONFIG_M1_COLLECTOR_X_SOURCE:-}
+    CONFIG_M1_COLLECTOR_MARKET_SOURCE: ${CONFIG_M1_COLLECTOR_MARKET_SOURCE:-}
+    CONFIG_M1_COLLECTOR_COINGECKO_API_KEY_TYPE: ${CONFIG_M1_COLLECTOR_COINGECKO_API_KEY_TYPE:-}
+    CONFIG_M1_COLLECTOR_COINGECKO_BASE_URL: ${CONFIG_M1_COLLECTOR_COINGECKO_BASE_URL:-}
   depends_on:
     postgres: { condition: service_healthy }
     redis: { condition: service_healthy }
@@ -33,7 +39,7 @@ services:
 
   server:
     <<: *app
-    command: pnpm server
+    command: pnpm run server
     ports: ["4000:4000"]
     depends_on:
       migrate: { condition: service_completed_successfully }
@@ -41,7 +47,7 @@ services:
 
   worker:
     <<: *app
-    command: pnpm worker
+    command: pnpm run worker
     depends_on:
       server: { condition: service_healthy }   # server 启动时执行模块迁移，worker 等它
 

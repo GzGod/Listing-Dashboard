@@ -3,6 +3,14 @@ on: [push, pull_request]
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: test, POSTGRES_DB: source_tests }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U postgres" --health-interval 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/source_tests
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -13,3 +21,5 @@ jobs:
       - run: pnpm check        # 校验所有模块 manifest、表前缀、迁移
       - run: pnpm typecheck    # tsc 全仓 + web
       - run: pnpm lint         # eslint + dependency-cruiser（禁止模块互相引用）
+      - run: pnpm test:sources
+      - run: pnpm test:sources:integration

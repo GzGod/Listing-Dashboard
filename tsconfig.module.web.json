@@ -7,7 +7,7 @@
     "baseUrl": ".",
     "typeRoots": ["./apps/web/node_modules/@types", "./node_modules/@types"],
     "paths": {
-      "@app/ui": ["packages/ui/src/index.tsx"], "@app/shared": ["packages/shared/src/index.ts"],
+      "@app/ui": ["packages/ui/src/index.tsx"], "@app/ui/tokens": ["packages/ui/src/tokens.ts"], "@app/shared": ["packages/shared/src/index.ts"],
       "next": ["apps/web/node_modules/next"], "next/*": ["apps/web/node_modules/next/*"],
       "react": ["apps/web/node_modules/@types/react"], "react/*": ["apps/web/node_modules/@types/react/*"],
       "react-dom": ["apps/web/node_modules/@types/react-dom"], "react-dom/*": ["apps/web/node_modules/@types/react-dom/*"]

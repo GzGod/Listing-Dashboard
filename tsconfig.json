@@ -1,4 +1,4 @@
 { "compilerOptions": { "target": "ES2022", "module": "NodeNext", "moduleResolution": "NodeNext", "strict": true, "esModuleInterop": true,
     "skipLibCheck": true, "resolveJsonModule": true, "noEmit": true, "jsx": "react-jsx", "lib": ["ES2023", "DOM"] },
   "//": "模块代码（src/web/server 全部 TS/TSX）由 tsconfig.modules.json 检查（extends tsconfig.module.json）",
-  "include": ["packages/core/src/**/*", "packages/shared/src/**/*", "packages/db/src/**/*", "apps/server/src/**/*", "apps/worker/src/**/*", "scripts/**/*"] }
+  "include": ["packages/core/src/**/*", "packages/shared/src/**/*", "packages/db/src/**/*", "apps/server/src/**/*", "apps/worker/src/**/*", "scripts/**/*", "tests/integration/data-sources.ts"] }

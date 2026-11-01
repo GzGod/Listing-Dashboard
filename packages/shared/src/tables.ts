@@ -31,7 +31,7 @@ export interface Person {
 }
 export interface PersonTag { id: ID; personId: ID; tag: PersonTagKind }
 export interface Post {
-  id: ID; personId: ID; platformId: ID; platformPostId: string; postedAt: string; views: number; bookmarks: number;
+  id: ID; personId: ID; platformId: ID; platformPostId: string; postedAt: string; views: number | null; bookmarks: number | null;
   url: string; text: string | null; lastFetchedAt: string | null; frozen: boolean;
 }
 export type MatchMethod = "ticker" | "name" | "contract";
@@ -46,7 +46,7 @@ export interface BuzzSnapshot {
   trackRank: number | null;               // 同赛道按 adjustedTotal 的排名（并列同名次，下一名跳号 1,1,3）
   adjustedTotal: number;                  // = 最新未撤销 buzz_adjustments.value ?? rawTotal（m3-engine 写），前台展示/排名用
 }
-export interface VolumeSnapshot { id: ID; projectId: ID; exchangeId: ID; day: string; spotVolumeUsd24h: number | null }
+export interface VolumeSnapshot { id: ID; projectId: ID; exchangeId: ID; day: string; spotVolumeUsd24h: number | null; source: string; fetchedAt: string }
 export interface PriceSnapshot { id: ID; projectId: ID; day: string; priceUsd: number | null; source: string; fetchedAt: string }
 export interface ProjectDaily {
   id: ID; projectId: ID; day: string; trackId: ID | null /* 当日所属赛道；项目还没赛道时 null，此时 volumeTrackRank 也是 null */; totalSpotVolumeUsd: number | null; volumeTrackRank: number | null /* 同赛道成交额排名，1,1,3 */; priceUsd: number | null;

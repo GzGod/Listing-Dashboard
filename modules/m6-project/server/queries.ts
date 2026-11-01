@@ -51,7 +51,7 @@ export const getMarketRange = (db: CoreDb, projectId: number, from: string, to: 
 
 export const getExchangeVolumes = (db: CoreDb, projectId: number, day: string) => db.$queryRaw<ExchangeVolume[]>`
   SELECT e.name AS exchange, v.spot_volume_usd_24h AS "volumeUsd" FROM volume_snapshots v JOIN exchanges e ON e.id = v.exchange_id
-  WHERE v.project_id = ${projectId} AND v.day = ${day}::date ORDER BY v.spot_volume_usd_24h DESC`;
+  WHERE v.project_id = ${projectId} AND v.day = ${day}::date AND v.spot_volume_usd_24h IS NOT NULL ORDER BY v.spot_volume_usd_24h DESC`;
 
 export const getListingEvents = (db: CoreDb, projectId: number, from: string, to: string) => db.$queryRaw<(Omit<ListingRec, 'stage'> & { stage: string })[]>`
   SELECT l.id, e.name AS exchange, l.stage, to_char(l.day, 'YYYY-MM-DD') AS day, l.pair, l.announcement_url AS "announcementUrl"

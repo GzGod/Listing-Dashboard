@@ -164,8 +164,8 @@ model Post {
   platform       Platform  @relation(fields: [platformId], references: [id])
   platformPostId String    @map("platform_post_id")
   postedAt       DateTime  @map("posted_at")
-  views          Int       @default(0)
-  bookmarks      Int       @default(0)
+  views          Int?      // null = 数据源未提供；0 = 已获取且为零
+  bookmarks      Int?
   url            String
   text           String?
   lastFetchedAt  DateTime? @map("last_fetched_at")
@@ -248,6 +248,8 @@ model VolumeSnapshot {
   exchange         Exchange @relation(fields: [exchangeId], references: [id])
   day              DateTime @db.Date
   spotVolumeUsd24h Float?   @map("spot_volume_usd_24h") // null = 当天有行但没取到（null ≠ 0）
+  source           String   @default("unknown") // 来源、资产身份与口径；mock 显式标记
+  fetchedAt        DateTime @default(now()) @map("fetched_at")
   @@unique([projectId, exchangeId, day])
   @@map("volume_snapshots")
 }

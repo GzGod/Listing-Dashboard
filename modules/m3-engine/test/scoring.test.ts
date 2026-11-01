@@ -19,7 +19,8 @@ test("无数据不写行；缺一项为 null；成交额求和", () => {
   assert.equal(S.dailyRow(undefined, null), null);
   assert.deepEqual(S.dailyRow(100, undefined), { totalSpotVolumeUsd: 100, priceUsd: null });
   assert.equal(S.sumVolume([null, null]), null);
-  assert.equal(S.sumVolume([1, null, 2]), 3);
+  assert.equal(S.sumVolume([1, null, 2]), null);
+  assert.equal(S.sumVolume([1, 2]), 3);
 });
 test("版本留痕 + 重算计划", () => {
   const s = S.scoreDay(1, "2026-10-25", [m({})], P2, T1, opt)!;
@@ -103,4 +104,12 @@ test("切日时区：UTC 与 Asia/Shanghai", () => {
   const eff = ["2026-10-01"];
   assert.deepEqual(S.planRecalc("manual_adjust", "2026-10-31", "2026-11-05", eff, S.dayIn(t, "UTC")).map((x) => x.day), ["2026-10-31"]);
   assert.deepEqual(S.planRecalc("manual_adjust", "2026-10-31", "2026-11-05", eff, S.dayIn(t, "Asia/Shanghai")).map((x) => x.day), ["2026-10-31", "2026-11-01"]);
+});
+
+test("缺失所需指标的声量不进入排名，明确零值仍可计分", () => {
+  assert.equal(S.scoreDay(1, "2026-10-25", [m({ views: null })], P2, T1, opt), null);
+  assert.equal(S.scoreDay(1, "2026-10-25", [m({}), m({ postId: 2, bookmarks: null })], P2, T1, opt), null);
+  assert.equal(S.scoreDay(1, "2026-10-25", [m({ views: 0, bookmarks: 0 })], P2, T1, opt)!.rawTotal, 0);
+  assert.equal(S.scoreDay(1, "2026-10-25", [m({ bookmarks: null })], { ...P2, b: 0 }, T1, opt)!.rawTotal, 6);
+  assert.equal(S.sumVolume([1, NaN]), null);
 });
